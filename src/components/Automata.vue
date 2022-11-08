@@ -91,6 +91,11 @@
         </div>
       </dropdown>
 
+      <ui-button-toggle label="Render States / Paints" :action="() => simulator.renderStatesElsePaints = !simulator.renderStatesElsePaints"
+        :condition="() => simulator ? simulator.renderStatesElsePaints : false"
+        iconNameOn="palette"
+        iconNameOff="gradient"/>
+
       <ui-button label="Random Fill Sim" :action="fillRandom" iconName="format_color_fill" />
 
       <ui-button label="Clear Sim" :action="() => simulator.resetSim()" iconName="clear" />
@@ -163,7 +168,7 @@ for (const line of presetsRaw.split("\n")) {
       console.debug("blah");
     },
     fillRandom() {
-      randomizeDataBuffer(this.simulator.states);
+      randomizeDataBuffer(this.simulator.numStates);
       this.simulator.texSetup();
     },
     importRule() {
