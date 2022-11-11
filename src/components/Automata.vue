@@ -105,7 +105,7 @@
 
       <ui-button label="Random Fill Sim" :action="fillRandom" iconName="format_color_fill" />
 
-      <ui-button label="Clear Sim" :action="() => simulator.resetSim()" iconName="clear" />
+      <ui-button label="Clear Sim" :action="() => simulator.texSetup()" iconName="clear" />
     </div>
 
     <transition name="growtl">
@@ -121,7 +121,7 @@
 
 <script lang="ts">
 import { Options, Vue } from 'vue-class-component';
-import { Sim, randomizeDataBuffer, RuleSpec } from '../sim'
+import { Sim, RuleSpec } from '../sim'
 import Dropdown from './Dropdown.vue';
 import MenuButton from './MenuButton.vue';
 import UIButton from './UIButton.vue';
@@ -133,7 +133,8 @@ const shaders = {
   "colormap": require('../shaders/colormap.glsl').default,
   "drawing": require('../shaders/drawing.glsl').default,
   "simulate": require('../shaders/simulate.glsl').default,
-  "vertex": require('../shaders/vertex.glsl').default
+  "vertex": require('../shaders/vertex.glsl').default,
+  "randomize": require('../shaders/randomize.glsl').default,
 };
 
 // Process the presets stored inside rules.txt
@@ -181,8 +182,7 @@ for (const line of presetsRaw.split("\n")) {
       console.debug("blah");
     },
     fillRandom() {
-      randomizeDataBuffer(this.simulator.numStates);
-      this.simulator.texSetup();
+      this.simulator.randomRequested = true;
     },
     importRule() {
       const inpString = this.$refs["input-area"].value as string;

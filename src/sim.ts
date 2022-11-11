@@ -88,23 +88,13 @@ export interface RuleSpec {
     rules: Array<{in: number; out: number; alt?: number; N?: Record<number, Array<number>>}>;
 }
 
-//This has to live outside of the class otherwise it's really slow for some reason
-const texDataBuffer = new Uint8Array(4096**2*4);
-
-export function randomizeDataBuffer(m: number) {
-    for (let i = 0; i < texDataBuffer.length; i+= 4) {
-        texDataBuffer[i+0] = Math.floor(Math.random()*255);
-        texDataBuffer[i+1] = Math.floor(Math.random()*255);
-        texDataBuffer[i+2] = Math.floor(Math.random()*255);
-        texDataBuffer[i+3] = Math.floor(Math.random() * m);
-    }
-}
-
 export class Sim {
     gl: WebGL2RenderingContext;                 // WebGL2 rendering context, passed into constructor
+    randomProgram?: WebGLProgram;               // WebGL2 program for randomizing 
     simProgram?: WebGLProgram;                  // WebGL program for simulating cellular automata
-    colorProgram?: WebGLProgram;                // WebGL program for drawing CA state in correct colors
-    drawProgram?: WebGLProgram;                 // WebGL program for drawing CA state in correct colors
+    colorProgram?: WebGLProgram;                // WebGL program for rendering CA state in correct colors
+    drawProgram?: WebGLProgram;                 // WebGL program for drawing CA states from the mouse
+    randUniforms: any;
     simUniforms: Record<                        // Uniforms for simProgram
         string,
         {loc: WebGLUniformLocation}> = {};
@@ -179,6 +169,9 @@ export class Sim {
     mutateRate = 1.0;
     keysPressed = new Set<string>();
     renderStatesElsePaints = true;
+    clearRequested = false;
+    randomRequested = true;
+    germinateRequested = false;
     
     constructor(
         private canvas: HTMLCanvasElement,
@@ -193,8 +186,7 @@ export class Sim {
             this.nStateMap.set(ruleLength(i), i);
         }
         this.webGlSetup(shaders);
-        // randomizeDataBuffer(this._states);
-        this.resetSim();
+        this.texSetup();
         //Create clipboard node
         if (!document.getElementById("_clipboard")) {
             const clipboardNode = document.createElement("input");
@@ -218,7 +210,6 @@ export class Sim {
     set simSize(val: number) {
         this._simSize = val;
         if (this.fbA && this.fbB) {
-            this.clear();
             this.texSetup();
         }
     }
@@ -452,20 +443,11 @@ export class Sim {
             this.setRule(rule);
         }
     }
-    clear() {
-        this.flip = false;
-        texDataBuffer.fill(0);
-    }
     germinate() {
         // Clear with a single spot in the center
-        this.clear();
-        const i = (this.simSize * (this.simSize / 2))*3;
-        texDataBuffer[i+3] = this.pen.state;
-        texDataBuffer[i] = 255; // Let's make the starting cell RED
-        this.texSetup();
+        this.germinateRequested = true;
     }
     resetSim() {
-        this.clear();
         this.texSetup();
     }
     import() {
@@ -514,8 +496,7 @@ export class Sim {
                 this.germinate();
                 break;
             case "f":
-                randomizeDataBuffer(this._states);
-                this.texSetup();
+                this.randomRequested = true;
                 break;
             case "m":
                 this.mutate();
@@ -523,7 +504,7 @@ export class Sim {
             case "c":
             case "backspace":
             case "delete":
-                this.resetSim();
+                this.texSetup();
                 break;
             case "arrowleft":
                 this.cam.move.x = -3;
@@ -572,7 +553,7 @@ export class Sim {
         this.texA = this.texA || this.gl.createTexture()!;
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.texA);
         this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA8UI, this.simSize, this.simSize,
-            0, this.gl.RGBA_INTEGER, this.gl.UNSIGNED_BYTE, texDataBuffer.subarray(0, this.simSize**2*4));
+            0, this.gl.RGBA_INTEGER, this.gl.UNSIGNED_BYTE, null);
         this.texConfig(this.gl.REPEAT);
         this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, this.texA, 0);
         
@@ -599,7 +580,24 @@ export class Sim {
         this.gl.uniform2fv(this.drawUniforms.size.loc, [this.simSize, this.simSize]);
     }
     animateScene() {
+
         this.gl.viewport(0, 0, this.simSize, this.simSize);
+
+        if (this.randomRequested) {
+            console.log("Random Requested");
+            this.randomRequested = false;
+            this.flip = !this.flip;
+            /* Randomizing */
+            this.gl.useProgram(this.randomProgram!);
+            //Seed generation (Insecure)
+            this.gl.uniform4fv(this.randUniforms.seed.loc, [Math.random(), Math.random(), Math.random(), Math.random()]); // Absolutely too few bits of entropy
+            this.gl.uniform1ui(this.randUniforms.states.loc, this._states);
+            //Render randomized to framebuffer
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, (this.flip ? this.fbB : this.fbA)!);
+            this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+            
+        }
+
     
         /* Simulation */
         if (!this.pause || this.doStep) {
@@ -768,7 +766,28 @@ export class Sim {
         const vertexBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, vertexArray, this.gl.STATIC_DRAW);
+
+        /* --- Randomizer Shader Program --- */
+        //Build randomizer shader program
+        this.randomProgram = this.buildShaderProgram([
+            {type: this.gl.FRAGMENT_SHADER, name: "randomize", code: shaders["randomize"]},
+            {type: this.gl.VERTEX_SHADER, name: "vertex", code: shaders["vertex"]}
+        ])!;
     
+        //Simulation uniforms
+        this.gl.useProgram(this.randomProgram);
+        this.randUniforms = {
+            seed:       {loc: this.gl.getUniformLocation(this.randomProgram, "uSeed")!},
+            states:     {loc: this.gl.getUniformLocation(this.randomProgram, "uStates")!},
+        };
+
+        //Vertex position attribute
+        let aVertexPosition = this.gl.getAttribLocation(this.randomProgram, "aVertexPosition");
+        this.gl.activeTexture(this.gl.TEXTURE0);
+        this.gl.vertexAttribPointer(aVertexPosition, 2, this.gl.FLOAT, false, 0, 0);
+        this.gl.enableVertexAttribArray(aVertexPosition);
+
+
         /* --- Simulator Shader Program --- */
         //Build simulator shader program
         this.simProgram = this.buildShaderProgram([
@@ -789,7 +808,7 @@ export class Sim {
         };
 
         //Vertex position attribute
-        let aVertexPosition = this.gl.getAttribLocation(this.simProgram, "aVertexPosition");
+        aVertexPosition = this.gl.getAttribLocation(this.simProgram, "aVertexPosition");
         this.gl.activeTexture(this.gl.TEXTURE0);
         this.gl.vertexAttribPointer(aVertexPosition, 2, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(aVertexPosition);
