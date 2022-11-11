@@ -147,7 +147,7 @@ export class Sim {
     nSubIndices = ruleSubIndices(this._states); // Number of subindices in current rule
     pen = {                                     // Pen properties
         state: 1,
-        paint: '#000000',
+        paint: '#'+(Math.random()*0xFFFFFF<<0).toString(16),
         size: 50
     };
     _preset = "game of life";                   // Current rule preset selection
