@@ -204,4 +204,6 @@ button .material-icons {
     position:absolute;
     top:0;
     left:0;
+    color:lightgray;
+    background: rgba(0,0,0,0.5);
 }

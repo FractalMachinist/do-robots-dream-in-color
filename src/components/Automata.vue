@@ -126,6 +126,8 @@ import Dropdown from './Dropdown.vue';
 import MenuButton from './MenuButton.vue';
 import UIButton from './UIButton.vue';
 import UIButtonToggle from './UIButtonToggle.vue';
+import { mn } from "../madnum";
+
 
 const shaders = {
   "colormap": require('../shaders/colormap.glsl').default,
@@ -165,7 +167,7 @@ for (const line of presetsRaw.split("\n")) {
   },
   watch: {
     'simulator.fps': function() {
-      this.frameRate = `[${this.simulator.frames} frames, ${this.simulator.steps} steps, ${this.simCells} cells] per second`;
+      this.frameRate = `[${this.simulator.fps.toFixed(1)} frames, ${this.simulator.steps} steps, ${mn((this.simCells*this.simulator.steps) || Number(0.0))} cells] per second`;
       this.simulator.frames = 0;
       this.simulator.steps = 0;
     },

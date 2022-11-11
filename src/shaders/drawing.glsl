@@ -15,6 +15,8 @@ out uvec4 fragColor;
 #define mDrawValueOr0 uint(2) /**010*/
 #define mStateOrPaint uint(1) /**001*/
 
+#define mRGBNotState uvec4(255,255,255,0)
+
 void main(void) {
     fragColor = texture(uStates, vTextureCoord);
 
@@ -30,18 +32,18 @@ void main(void) {
     // Mouse click adds cells
     // This is ripe for optimization
     if (bool(uMouseMask & mMouseDrawing) && (floor(pMouseDist) < uMouse.z)) {
-        if (bool(uMouseMask & mStateOrPaint)) {
-            if (bool(uMouseMask & mDrawValueOr0)) {
-                fragColor.a = uPenState.a;
-            } else {
-                fragColor.a = uint(0);
-            }
-        } else {
-            if (bool(uMouseMask & mDrawValueOr0)) {
-                fragColor.rgb = uPenState.rgb;
-            } else {
-                fragColor.rgb = uvec3(0);
-            }
-        }
+        // uPenState is the state which the pen is expressing.
+        // We might want to draw that value, or we might want to draw 0's.
+        // Without any conditional jumps, compute `penStateOr0`.
+        // Expect the compiler to be attentive, so keep everything readable.
+        uint drawValueOr0 = (uMouseMask & mDrawValueOr0)>>1; // RShift because this bit is stored in the 2s place.
+        uint drawValueOr0Mask = 0u - drawValueOr0;           // Convert 0b1 into 0b11111111 and 0b0 stays 0b0
+        uvec4 penStateOr0 = uPenState & drawValueOr0Mask;    // Update the state we will be assigning
+
+        uint drawStateOrPaint = (uMouseMask & mStateOrPaint); // No RShift, this bit is stored in the 1s place
+        uint drawStateOrPaintMask = 0u - drawStateOrPaint;    // Convert 0b1 into 0b11111111 and 0b0 stays 0b0
+        uvec4 updateMask = mRGBNotState ^ drawStateOrPaintMask;       // Mask of bits, high were we want to provide a new value
+
+        fragColor = (penStateOr0&updateMask)|(fragColor&~updateMask);
     }
 }
