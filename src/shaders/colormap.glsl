@@ -31,6 +31,7 @@ void main(void) {
     } else {
         uvec4 here = texture(uStates, coord);
         vec3 colorComponent = vec3(here.rgb)/255.0;
+        colorComponent = (colorComponent + 0.1 ) / 1.1;
         float alphaComponent = 0.1;
         if (int(here.a) > 0){
             alphaComponent = 1.0;
