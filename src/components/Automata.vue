@@ -16,6 +16,12 @@
           <input type="range" min="1" :max="simulator.states - 1" v-model="simulator.pen.state">
           <span class="label">{{ simulator.pen.state }}</span>
         </div>
+        <!-- Pen cell paint -->
+        <div class="dropdown-item value-color" @mouseenter="setTooltip('pen cell paint')">
+          <span class="material-icons">gradient</span>
+          <input type="color"  v-model="simulator.pen.paint">
+          <span class="label">{{ simulator.pen.paint }}</span>
+        </div>
       </dropdown>
 
       <dropdown icon_name="video_settings" dropdown_title="Simulation Settings" @hide-all="hideall = !hideall" :vd="hideall">

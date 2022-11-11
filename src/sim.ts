@@ -2,6 +2,21 @@
 import lz4 from "lz4js";
 import { rule } from "postcss";
 
+const mMouseDrawing = 0b100
+const mDrawValueOr0 = 0b010;
+const mStateOrPaint = 0b001;
+
+
+function hexToRgb(hex: string) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null;
+  }
+  
+
 function factorial(m: number) {
     let n = 1;
     for (let i = 2; i <= m; i++) {
@@ -132,6 +147,7 @@ export class Sim {
     nSubIndices = ruleSubIndices(this._states); // Number of subindices in current rule
     pen = {                                     // Pen properties
         state: 1,
+        paint: '#000000',
         size: 50
     };
     _preset = "game of life";                   // Current rule preset selection
@@ -242,7 +258,7 @@ export class Sim {
     clickOn(e: MouseEvent) {
         switch (e.button) {
             case 0: // Left click
-                this.drawUniforms.mouse.val[2] = this.pen.state;
+                this.drawUniforms.mouseMask.val = mMouseDrawing|mDrawValueOr0|Number(this.renderStatesElsePaints);
                 break;
             case 1: // Middle click
                 this.cam.panning = true;
@@ -253,7 +269,7 @@ export class Sim {
                 this.canvas.style.cursor = "move";
                 break;
             case 2: // Right click
-                this.drawUniforms.mouse.val[2] = 0;
+                this.drawUniforms.mouseMask.val = mMouseDrawing|Number(this.renderStatesElsePaints);
                 break;
         }
     }
@@ -261,7 +277,7 @@ export class Sim {
         switch (e.button) {
             case 0: // Left click
             case 2: // Right click
-                this.drawUniforms.mouse.val[2] = -1;
+                this.drawUniforms.mouseMask.val = 0;
                 break;
             case 1: // Middle click
                 this.cam.panning = false;
@@ -545,6 +561,8 @@ export class Sim {
                 break;
         }
     }
+
+
     texSetup() {
         //Framebuffer A
         this.fbA = this.fbA || this.gl.createFramebuffer()!;
@@ -610,8 +628,14 @@ export class Sim {
         /* Drawing */
         this.flip = !this.flip;
         this.gl.useProgram(this.drawProgram!);
-        this.drawUniforms.mouse.val[3] = this.pen.size;
-        this.gl.uniform4fv(this.drawUniforms.mouse.loc, this.drawUniforms.mouse.val);
+
+        const p = hexToRgb(this.pen.paint)
+        if (p === null){throw new Error(`Current Paint could not be parsed as hex: ${this.pen.paint}`);}
+        this.drawUniforms.penState.val = [p.r, p.g, p.b, this.pen.state];
+        this.gl.uniform4uiv(this.drawUniforms.penState.loc, this.drawUniforms.penState.val);
+        this.drawUniforms.mouse.val[2] = this.pen.size;
+        this.gl.uniform3fv(this.drawUniforms.mouse.loc, this.drawUniforms.mouse.val);
+        this.gl.uniform1ui(this.drawUniforms.mouseMask.loc, this.drawUniforms.mouseMask.val);
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, (this.flip ? this.fbB : this.fbA)!);
         this.gl.activeTexture(this.gl.TEXTURE0);
         this.gl.bindTexture(this.gl.TEXTURE_2D, (this.flip ? this.texA : this.texB)!);
@@ -826,8 +850,10 @@ export class Sim {
         //Uniforms
         this.drawUniforms = {
             size:       {loc: this.gl.getUniformLocation(this.drawProgram, "uSize")},
-            states:    {loc: this.gl.getUniformLocation(this.drawProgram, "uStates")},
-            mouse:      {loc: this.gl.getUniformLocation(this.drawProgram, "uMouse"), val: [0, 0, -1, 50]},
+            states:     {loc: this.gl.getUniformLocation(this.drawProgram, "uStates")},
+            mouse:      {loc: this.gl.getUniformLocation(this.drawProgram, "uMouse"), val: [0, 0, 50]},
+            mouseMask:  {loc: this.gl.getUniformLocation(this.drawProgram, "uMouseMask"), val: 0},
+            penState:   {loc: this.gl.getUniformLocation(this.drawProgram, "uPenState"), val: [0, 0, 0, 0]},
         };
 
         
