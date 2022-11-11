@@ -198,3 +198,10 @@ button .material-icons {
   position: fixed;
   top: 100vh;
 }
+
+
+.fps {
+    position:absolute;
+    top:0;
+    left:0;
+}

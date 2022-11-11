@@ -1,5 +1,6 @@
 <template>
   <canvas id="glCanvas" ref="glCanvas"></canvas>
+  <p id="framerate" class="fps">{{ frameRate }}</p>
   <div ref="automataWindow" class="automataWindow grid items-start justify-center">
     <div id="tooltip"><p style="visibility: hidden"></p></div>
     <div id="ui-container" class="grid overflow-visible justify-center grid-flow-col-dense place-items-center p-2 gap-2">
@@ -164,9 +165,13 @@ for (const line of presetsRaw.split("\n")) {
   },
   watch: {
     'simulator.fps': function() {
-      this.frameRate = `${this.simulator.frames} frames/sec per ${this.simulator.steps} steps/sec`;
+      this.frameRate = `[${this.simulator.frames} frames, ${this.simulator.steps} steps, ${this.simCells} cells] per second`;
       this.simulator.frames = 0;
       this.simulator.steps = 0;
+    },
+
+    'simulator.simSize': function() {
+      this.simCells = Math.pow(this.simulator.simSize, 2)
     }
   },
   methods: {
