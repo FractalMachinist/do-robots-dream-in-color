@@ -77,16 +77,12 @@ export interface RuleSpec {
 const texDataBuffer = new Uint8Array(4096**2*4);
 
 export function randomizeDataBuffer(m: number) {
-    console.time("Randomizing data buffer");
     for (let i = 0; i < texDataBuffer.length; i+= 4) {
         texDataBuffer[i+0] = Math.floor(Math.random()*255);
         texDataBuffer[i+1] = Math.floor(Math.random()*255);
         texDataBuffer[i+2] = Math.floor(Math.random()*255);
         texDataBuffer[i+3] = Math.floor(Math.random() * m);
     }
-    console.timeEnd("Randomizing data buffer")
-
-    console.log(texDataBuffer.slice(0, 4))
 }
 
 export class Sim {
