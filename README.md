@@ -1,5 +1,7 @@
 Cellular automata fingerpainting!
 
+[*Play with it here!*](https://fractalmachini.st/cellarium)
+
 Cellular automata are fascinating and colorful, but what if they got *more* colorful? Whenever a cell changes state, it gets painted by the same-state cells in its neighborhood. This means isolated patches of cells share paint fairly quickly without trending directly to brown, but the whole system approaches brown very quickly.
 
 ## Controls
