@@ -167,7 +167,7 @@ for (const line of presetsRaw.split("\n")) {
   },
   watch: {
     'simulator.fps': function() {
-      this.frameRate = `[${this.simulator.fps.toFixed(1)} frames, ${this.simulator.steps} steps, ${mn((this.simCells*this.simulator.steps) || Number(0.0))} cells] per second`;
+      this.frameRate = `[${this.simulator.fps.toFixed(2)} frames, ${mn(this.simulator.steps*this.simulator.fps)} steps, ${mn((this.simCells*this.simulator.steps*this.simulator.fps) || Number(0.0))} cells] per second`;
       this.simulator.frames = 0;
       this.simulator.steps = 0;
     },

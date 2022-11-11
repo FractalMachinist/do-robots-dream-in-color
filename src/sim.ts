@@ -660,9 +660,11 @@ export class Sim {
     
         //Next frame
         this.frames += 1;
-        if (Date.now() - this.lastFPSSample >= 1000) {
-            this.fps = this.frames;
-            this.lastFPSSample = Date.now();
+        const now = Date.now()
+        const timeSinceFPSSample = now - this.lastFPSSample;
+        if (timeSinceFPSSample >= 1000) {
+            this.fps = this.frames / (timeSinceFPSSample/1000.0);
+            this.lastFPSSample = now;
         }
         window.requestAnimationFrame(this.animateScene.bind(this));
     }
