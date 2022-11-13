@@ -25,7 +25,7 @@ Cellular automata are fascinating and colorful, but what if they got *more* colo
 - **mutate rule** (*M*): Randomly changes some rule parameters
 - **simulation size**: Size of the simulation texture
 - **clear** (*C*): Sets state of entire simulation space to 0
-- **germinate from center** (*G*): Adds single state-1 cell to center, clearing everything else
+- ~~**germinate from center** (*G*): Adds single state-1 cell to center, clearing everything else~~ (Temporarily broken in favor of fast, consistent randomization)
 - **fill randomly** (*F*): Sets all cells to random states
 - **render states / paints**: Switch between coloring by a cell's state and its paint.
 
