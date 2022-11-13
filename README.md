@@ -32,9 +32,6 @@ Cellular automata are fascinating and colorful, but what if they got *more* colo
 ## Status & Feedback
 This is a prototype. I stopped developing here to gather feedback about direction and future features.
 
-## Issues
-- For some reason, hitting 'random' seems to just... not happen sometimes.
-
 <details>
 <summary>Original README.md</summary>
 <div style="text-align:center"><img src="logo.png" /></div>
