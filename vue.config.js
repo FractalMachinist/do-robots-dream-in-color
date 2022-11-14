@@ -7,5 +7,5 @@ module.exports = {
       .loader('raw-loader')
       .end()
   },
-  publicPath: "/cellarium/"
+  publicPath: "/do-robots-dream-in-color/"
 }
